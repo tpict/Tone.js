@@ -1,7 +1,7 @@
 import Tone from "../core/Tone";
 import "../instrument/Instrument";
 import "../core/Buffers";
-import "../source/BufferSource";
+import "../source/Player";
 
 /**
  * @class Automatically interpolates between a set of pitched samples. Pass in an object which maps the note's pitch or midi value to the url, then you can trigger the attack and release of that note like other instruments. By automatically repitching the samples, it is possible to play pitches which were not explicitly included which can save loading time.
@@ -122,7 +122,7 @@ Tone.Sampler.prototype._findClosest = function(midi){
  * @param  {NormalRange=} velocity The velocity to play the sample back.
  * @return {Tone.Sampler}          this
  */
-Tone.Sampler.prototype.triggerAttack = function(notes, time, velocity){
+Tone.Sampler.prototype.triggerAttack = function(notes, time, velocity, duration){
 	this.log("triggerAttack", notes, time, velocity);
 	if (!Array.isArray(notes)){
 		notes = [notes];
@@ -135,12 +135,15 @@ Tone.Sampler.prototype.triggerAttack = function(notes, time, velocity){
 		var buffer = this._buffers.get(closestNote);
 		var playbackRate = Tone.intervalToFrequencyRatio(difference);
 		// play that note
-		var source = new Tone.BufferSource({
-			"buffer" : buffer,
+		var source = new Tone.Player({
+			"url" : buffer,
 			"playbackRate" : playbackRate,
 			"fadeIn" : this.attack,
 			"fadeOut" : this.release,
-			"curve" : this.curve,
+            "curve" : this.curve,
+            "loop": true,
+            "loopEnd": buffer.duration,
+            "autostart": false
 		}).connect(this.output);
 		source.start(time, 0, buffer.duration / playbackRate, velocity);
 		// add it to the active sources
@@ -232,7 +235,7 @@ Tone.Sampler.prototype.sync = function(){
  */
 Tone.Sampler.prototype.triggerAttackRelease = function(notes, duration, time, velocity){
 	time = this.toSeconds(time);
-	this.triggerAttack(notes, time, velocity);
+	this.triggerAttack(notes, time, velocity, duration);
 	if (Tone.isArray(duration) && Tone.isArray(notes)){
 		for (var i = 0; i < notes.length; i++){
 			var d = duration[Math.min(i, duration.length - 1)];
