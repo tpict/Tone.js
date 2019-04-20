@@ -2,6 +2,7 @@ import Tone from "../core/Tone";
 import "../instrument/Instrument";
 import "../core/Buffers";
 import "../source/Player";
+import "../core/Gain";
 
 /**
  * @class Automatically interpolates between a set of pitched samples. Pass in an object which maps the note's pitch or midi value to the url, then you can trigger the attack and release of that note like other instruments. By automatically repitching the samples, it is possible to play pitches which were not explicitly included which can save loading time.
@@ -144,8 +145,8 @@ Tone.Sampler.prototype.triggerAttack = function(notes, time, velocity, duration)
             "loop": true,
             "loopEnd": buffer.duration,
             "autostart": false
-		}).connect(this.output);
-		source.start(time, 0, buffer.duration / playbackRate, velocity);
+		}).chain(new Gain(velocity)).connect(this.output);
+		source.start(time, 0, buffer.duration / playbackRate);
 		// add it to the active sources
 		if (!Tone.isArray(this._activeSources[midi])){
 			this._activeSources[midi] = [];
